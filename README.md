@@ -85,20 +85,29 @@ back over the front, on top of whatever the matte is doing.
 (the more photographic behaviour, and the better default on scene-linear
 material), or Add, which lays it on at a constant level. *Texture tint* weights
 the texture per channel — warm values put more structure in the red record, the
-way real skin does. *Pore size* is the cell spacing in pixels at the current
-resolution.
+way real skin does. *Shading response* only applies in Add mode.
 
-**Limit and output** — picks which channel of the matte drives the effect,
-inverts and gains it, and fades the effect out of the shadows and highlights
-based on the base band so speculars stay intact. *View* shows the individual
-bands while you set the radii; the band views are offset by 0.5 so the negative
-half is visible.
+**Output** — *View* shows the individual bands while you set the radii; the band
+views are offset by 0.5 so the negative half is visible. *Clamp negatives* stops
+boosted detail pushing dark pixels below zero.
+
+### Matte page
+
+*Strength matte* picks which channel of the matte input drives the effect, and
+inverts and gains it. *Tonal limits* fade the effect out of the shadows and
+highlights based on the base band, so speculars stay intact.
 
 ### Texture page
 
-Tracking (texture space, ST map green flip, offset, seed), pore character
-(amount, width, scatter, depth variation), grain (amount, scale, octaves,
-roughness, and the micro layer), and shaping (domain warp and contrast).
+*Tracking* is the texture space, the ST map green flip and the offset.
+*Pattern* is pore size (cell spacing in pixels at the current resolution),
+aspect, rotation and seed. *Pores* and *Grain* set the character of the two main
+noise layers.
+
+### Fine tune page
+
+The micro layer (roughly peach fuzz scale), the domain warp that keeps the cell
+structure from reading as a grid, and the contrast shaping.
 
 ## Typical use
 

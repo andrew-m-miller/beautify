@@ -50,6 +50,30 @@ for sh in ET.parse('MT_BeautyFS.xml').getroot().findall('Shader'):
 EOF
 ```
 
+**Check the UI layout after touching any `Page` / `Col` / `Row` attribute.**
+Overflow and overlap are silent in Flame — a control just disappears or draws on
+top of another:
+
+```bash
+python3 - <<'EOF'
+import xml.etree.ElementTree as ET
+from collections import defaultdict
+occ = defaultdict(dict)
+for sh in ET.parse('MT_BeautyFS.xml').getroot().findall('Shader'):
+    for u in sh.findall('Uniform'):
+        if u.get('Row') is None: continue
+        p, c, r = u.get('Page'), u.get('Col'), int(u.get('Row'))
+        span = 2 if (u.get('Type') == 'vec2' or
+                     (u.get('Type') == 'vec3' and u.get('ValueType') == 'Position')) else 1
+        for rr in range(r, r + span):
+            if rr in occ[(p,c)]:
+                print(f"OVERLAP page {p} col {c} row {rr}: {u.get('Name')} vs {occ[(p,c)][rr]}")
+            if rr > 4:
+                print(f"OVERFLOW page {p} col {c} row {rr}: {u.get('Name')}")
+            occ[(p,c)][rr] = u.get('Name')
+EOF
+```
+
 **Simulate before trusting algorithm changes.** Porting a pass to NumPy and
 running it on a synthetic plate catches design errors that compile fine. The
 checks worth re-running after any change to the band math: reconstruction is a
@@ -154,6 +178,15 @@ docs pages 403 to WebFetch; clone the repo and grep it instead.
   `vec2` / `vec3` take one `<SubUniform Default="">` per component; colours are
   `Type="vec3" ValueType="Colour"`. Conditional enabling is
   `UIConditionSource` / `UIConditionValue` / `UIConditionType="Disable"|"Hide"`.
+- **A column holds exactly four rows, and `Col` runs 0-3.** Nothing in the
+  corpus places a control below row 4. Flame does not scroll or error on
+  overflow — controls past row 4 spill into the next column and land on top of
+  whatever is already there, so a control can silently vanish from the UI. Rows
+  are 1-based.
+- **Row spans differ by type.** A `vec2`, and a `vec3 ValueType="Position"`,
+  occupies **two** rows — the next control in that column must start two rows
+  later. A `vec3 ValueType="Colour"` swatch occupies **one**. Everything else is
+  one. Getting this wrong draws two controls in the same cell.
 
 ## Performance
 
