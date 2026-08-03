@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ShaderNodePreset Name="Beauty FS" SupportsAdaptiveDegradation="False" SupportsAction="False" SupportsTransition="False" SupportsTimeline="False" TimelineUseBack="False" MatteProvider="False" CommercialUsePermitted="True" ShaderType="Matchbox" SoftwareVersion="2017.0.0" LimitInputsToTexture="True" Version="1" Description="Beauty FS - frequency separation beauty work.
+
+Splits the front into three bands - base tone, mid frequency blemishes and fine skin texture - then lets you soften or boost each one independently. A procedural skin texture generator can add pore level detail back in, either alongside the natural texture or in place of it once the fine band has been softened away.
+
+Inputs:
+  Front    the image to work on
+  Matte    drives the strength of the effect
+  ST map   optional, tracks the procedural texture onto moving skin
+
+Set the fine detail to 0 and the texture amount to around 0.5 for a full texture replacement. Leave the texture amount at 0 and pull the detail gains down for a straight softening.">
+
+   <Shader OutputBitDepth="Float32" Index="1">
+
+      <Uniform Name="front" DisplayName="Front" Type="sampler2D" Index="0" InputType="Front" NoInput="Error" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE" Tooltip="The image to retouch"></Uniform>
+      <Uniform Name="stmap" DisplayName="ST map" Type="sampler2D" Index="2" NoInput="Black" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE" Tooltip="Optional UV pass, red and green are used as texture coordinates so the procedural texture sticks to the skin as it moves"></Uniform>
+
+      <Uniform Name="texScale" DisplayName="Pore size" Page="0" Col="2" Row="5" Type="float" Default="26.0" Min="1.0" Max="4000.0" Inc="0.5" ResDependent="None" Tooltip="Spacing of the pore cells, in pixels of the current resolution"></Uniform>
+      <Uniform Name="texAspect" DisplayName="Texture aspect" Page="0" Col="2" Row="6" Type="float" Default="1.0" Min="0.05" Max="20.0" Inc="0.01" ResDependent="None" Tooltip="Stretches the texture, useful for anamorphic material or for stretching pores along a cheekbone"></Uniform>
+      <Uniform Name="texRotate" DisplayName="Texture rotate" Page="0" Col="2" Row="7" Type="float" Default="0.0" Min="-360.0" Max="360.0" Inc="0.1" ResDependent="None" Tooltip="Rotates the texture, in degrees"></Uniform>
+
+      <Uniform Name="texSpace" DisplayName="Texture space" Page="1" Col="0" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Screen locks the texture to the frame. ST map reads texture coordinates from the ST map input so the texture tracks with the skin">
+         <PopupEntry Title="Screen" Value="0"></PopupEntry>
+         <PopupEntry Title="ST map" Value="1"></PopupEntry>
+      </Uniform>
+      <Uniform Name="stFlipV" DisplayName="Flip ST green" Page="1" Col="0" Row="2" Type="bool" Default="False" Tooltip="Flip the green channel of the ST map, for UV passes rendered with the origin at the top"></Uniform>
+      <Uniform Name="texOffset" DisplayName="Texture offset" Page="1" Col="0" Row="3" Type="vec2" Inc="0.5" Action3DWidget="False" IconType="None" Tooltip="Slides the texture, in pixels">
+         <SubUniform Default="0.0" Min="-100000.0" Max="100000.0" ResDependent="None"></SubUniform>
+         <SubUniform Default="0.0" Min="-100000.0" Max="100000.0" ResDependent="None"></SubUniform>
+      </Uniform>
+      <Uniform Name="texSeed" DisplayName="Seed" Page="1" Col="0" Row="4" Type="float" Default="3.0" Min="0.0" Max="1000.0" Inc="1.0" ResDependent="None" Tooltip="Changes the random pattern without changing its character"></Uniform>
+
+      <Uniform Name="poreAmount" DisplayName="Pore amount" Page="1" Col="1" Row="1" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Weight of the cellular pore layer"></Uniform>
+      <Uniform Name="poreSize" DisplayName="Pore width" Page="1" Col="1" Row="2" Type="float" Default="0.55" Min="0.02" Max="2.0" Inc="0.01" ResDependent="None" Tooltip="How much of each cell the pore fills - small values give tight dots, large values give a soft dimpled surface"></Uniform>
+      <Uniform Name="poreIrregular" DisplayName="Pore scatter" Page="1" Col="1" Row="3" Type="float" Default="0.85" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="0 puts the pores on a regular grid, 1 scatters them fully"></Uniform>
+      <Uniform Name="poreDepthVar" DisplayName="Pore variation" Page="1" Col="1" Row="4" Type="float" Default="0.6" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="Randomises the depth of each pore so they are not all identical"></Uniform>
+
+      <Uniform Name="fineAmount" DisplayName="Grain amount" Page="1" Col="2" Row="1" Type="float" Default="0.45" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Weight of the fractal noise layer that sits between the pores"></Uniform>
+      <Uniform Name="fineFreq" DisplayName="Grain scale" Page="1" Col="2" Row="2" Type="float" Default="2.2" Min="0.05" Max="40.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the fractal noise, relative to the pore spacing"></Uniform>
+      <Uniform Name="fineOctaves" DisplayName="Grain octaves" Page="1" Col="2" Row="3" Type="int" Default="4" Min="1" Max="8" Inc="1" ResDependent="None" Tooltip="Number of noise octaves - more octaves give finer structure at more cost"></Uniform>
+      <Uniform Name="fineRough" DisplayName="Grain roughness" Page="1" Col="2" Row="4" Type="float" Default="0.55" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="How much each octave contributes relative to the one before it"></Uniform>
+      <Uniform Name="microAmount" DisplayName="Micro amount" Page="1" Col="2" Row="5" Type="float" Default="0.2" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Weight of the finest noise layer, roughly the scale of peach fuzz"></Uniform>
+      <Uniform Name="microFreq" DisplayName="Micro scale" Page="1" Col="2" Row="6" Type="float" Default="7.0" Min="0.5" Max="80.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the finest noise layer, relative to the pore spacing"></Uniform>
+
+      <Uniform Name="warpAmount" DisplayName="Warp amount" Page="1" Col="3" Row="1" Type="float" Default="0.25" Min="0.0" Max="2.0" Inc="0.01" ResDependent="None" Tooltip="Distorts the texture coordinates so the cell structure never reads as a grid"></Uniform>
+      <Uniform Name="warpFreq" DisplayName="Warp scale" Page="1" Col="3" Row="2" Type="float" Default="0.35" Min="0.01" Max="8.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the warp - low values bend large areas, high values roughen individual cells"></Uniform>
+      <Uniform Name="texContrast" DisplayName="Texture contrast" Page="1" Col="3" Row="3" Type="float" Default="1.0" Min="0.05" Max="8.0" Inc="0.01" ResDependent="None" Tooltip="Shapes the generated signal about zero - above 1 keeps the peaks and suppresses the flat areas"></Uniform>
+
+   </Shader>
+
+   <Shader OutputBitDepth="Float32" Index="2">
+
+      <Uniform Name="adsk_results_pass1" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+
+      <Uniform Name="midRadius" DisplayName="Detail radius" Page="0" Col="0" Row="2" Type="float" Default="4.0" Min="0.0" Max="200.0" Inc="0.1" ResDependent="None" Tooltip="Splits fine texture from mid frequency blemishes. Roughly the size of the pores and grain you want to treat as texture, in pixels"></Uniform>
+      <Uniform Name="edgeProtect" DisplayName="Edge protect" Page="0" Col="0" Row="3" Type="float" Default="0.3" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="Stops the blurs dragging eyebrows, lips and background across the skin. 0 is a plain gaussian, high values keep more edges but can harden the result"></Uniform>
+      <Uniform Name="quality" DisplayName="Quality" Page="0" Col="0" Row="4" Type="int" ValueType="Popup" Default="0" Tooltip="Sample stride for the blurs - drop it down while you work, put it back to Best to render">
+         <PopupEntry Title="Best" Value="0"></PopupEntry>
+         <PopupEntry Title="Good" Value="1"></PopupEntry>
+         <PopupEntry Title="Draft" Value="2"></PopupEntry>
+         <PopupEntry Title="Fast" Value="3"></PopupEntry>
+      </Uniform>
+
+   </Shader>
+
+   <Shader OutputBitDepth="Float32" Index="3">
+
+      <Uniform Name="adsk_results_pass2" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+
+      <Uniform Name="midRadius" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="edgeProtect" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="quality" Type="int"><Duplicate></Duplicate></Uniform>
+
+   </Shader>
+
+   <Shader OutputBitDepth="Float32" Index="4">
+
+      <Uniform Name="adsk_results_pass3" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+
+      <Uniform Name="baseRadius" DisplayName="Base radius" Page="0" Col="0" Row="1" Type="float" Default="24.0" Min="0.0" Max="200.0" Inc="0.1" ResDependent="None" Tooltip="Splits mid frequency blemishes from the underlying skin tone. Roughly the size of the blotches and shading unevenness you want to treat, in pixels"></Uniform>
+      <Uniform Name="midRadius" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="edgeProtect" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="quality" Type="int"><Duplicate></Duplicate></Uniform>
+
+   </Shader>
+
+   <Shader OutputBitDepth="Float32" Index="5">
+
+      <Uniform Name="adsk_results_pass4" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+
+      <Uniform Name="baseRadius" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="midRadius" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="edgeProtect" Type="float"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="quality" Type="int"><Duplicate></Duplicate></Uniform>
+
+   </Shader>
+
+   <Shader OutputBitDepth="Output" Index="6">
+
+      <Uniform Name="front" Type="sampler2D"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="matte" DisplayName="Matte" Type="sampler2D" Index="1" InputType="Matte" NoInput="White" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE" Tooltip="Drives the strength of the effect - white is full effect, black is untouched front"></Uniform>
+      <Uniform Name="adsk_results_pass1" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+      <Uniform Name="adsk_results_pass3" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+      <Uniform Name="adsk_results_pass5" Type="sampler2D" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE"></Uniform>
+
+      <Uniform Name="midDetail" DisplayName="Mid detail" Page="0" Col="1" Row="1" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Gain on the mid frequency band. 1 leaves it alone, 0 removes blemishes and blotches completely, above 1 exaggerates them"></Uniform>
+      <Uniform Name="fineDetail" DisplayName="Fine detail" Page="0" Col="1" Row="2" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Gain on the fine band. 1 leaves the natural skin texture alone, 0 removes it ready for the procedural texture to replace it, above 1 sharpens"></Uniform>
+      <Uniform Name="strength" DisplayName="Strength" Page="0" Col="1" Row="3" Type="float" Default="1.0" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="Master mix back over the front, on top of whatever the matte input is doing"></Uniform>
+
+      <Uniform Name="texAmount" DisplayName="Texture amount" Page="0" Col="2" Row="1" Type="float" Default="0.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Strength of the procedural skin texture. Start around 0.5 with the fine detail pulled to 0"></Uniform>
+      <Uniform Name="texMode" DisplayName="Texture mode" Page="0" Col="2" Row="2" Type="int" ValueType="Popup" Default="0" Tooltip="Multiply scales the texture with local brightness, which is the more photographic behaviour. Add lays it on at a constant level">
+         <PopupEntry Title="Multiply" Value="0"></PopupEntry>
+         <PopupEntry Title="Add" Value="1"></PopupEntry>
+      </Uniform>
+      <Uniform Name="texTint" DisplayName="Texture tint" Page="0" Col="2" Row="3" Type="vec3" ValueType="Colour" Inc="0.01" Action3DWidget="False" IconType="None" Tooltip="Per channel weighting of the texture - warm values put more structure in the red record, the way real skin does">
+         <SubUniform Default="1.0" Min="-100.0" Max="100.0" ResDependent="None"></SubUniform>
+         <SubUniform Default="0.92" Min="-100.0" Max="100.0" ResDependent="None"></SubUniform>
+         <SubUniform Default="0.85" Min="-100.0" Max="100.0" ResDependent="None"></SubUniform>
+      </Uniform>
+      <Uniform Name="texShading" DisplayName="Shading response" Page="0" Col="2" Row="4" Type="float" Default="0.0" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texMode" UIConditionValue="0" UIConditionType="Disable" Tooltip="In Add mode, fades the texture out of the shadows in step with the base. Multiply mode does this on its own"></Uniform>
+
+      <Uniform Name="matteChannel" DisplayName="Matte channel" Page="0" Col="3" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Which channel of the matte input drives the strength">
+         <PopupEntry Title="Luminance" Value="0"></PopupEntry>
+         <PopupEntry Title="Red" Value="1"></PopupEntry>
+         <PopupEntry Title="Green" Value="2"></PopupEntry>
+         <PopupEntry Title="Blue" Value="3"></PopupEntry>
+         <PopupEntry Title="Alpha" Value="4"></PopupEntry>
+      </Uniform>
+      <Uniform Name="invertMatte" DisplayName="Invert matte" Page="0" Col="3" Row="2" Type="bool" Default="False" Tooltip="Invert the strength matte"></Uniform>
+      <Uniform Name="matteGain" DisplayName="Matte gain" Page="0" Col="3" Row="3" Type="float" Default="1.0" Min="0.0" Max="10.0" Inc="0.01" ResDependent="None" Tooltip="Multiplies the matte before it is clamped, for pushing a soft matte up to solid"></Uniform>
+      <Uniform Name="shadowLevel" DisplayName="Protect shadows" Page="0" Col="3" Row="4" Type="float" Default="0.0" Min="0.0" Max="1.0" Inc="0.001" ResDependent="None" Tooltip="Fades the effect out below this luminance in the base. 0 is off"></Uniform>
+      <Uniform Name="highlightLevel" DisplayName="Protect highlights" Page="0" Col="3" Row="5" Type="float" Default="100.0" Min="0.0" Max="100.0" Inc="0.01" ResDependent="None" Tooltip="Fades the effect out above this luminance in the base, which keeps speculars intact. 100 is off"></Uniform>
+      <Uniform Name="clampNegative" DisplayName="Clamp negatives" Page="0" Col="3" Row="6" Type="bool" Default="True" Tooltip="Clamp the result at zero, so boosted detail cannot push dark pixels negative"></Uniform>
+      <Uniform Name="viewMode" DisplayName="View" Page="0" Col="3" Row="7" Type="int" ValueType="Popup" Default="0" Tooltip="Look at the individual bands while you set the radii. The band views are offset by 0.5 so you can see the negative half">
+         <PopupEntry Title="Result" Value="0"></PopupEntry>
+         <PopupEntry Title="Base" Value="1"></PopupEntry>
+         <PopupEntry Title="Mid band" Value="2"></PopupEntry>
+         <PopupEntry Title="Fine band" Value="3"></PopupEntry>
+         <PopupEntry Title="Procedural texture" Value="4"></PopupEntry>
+         <PopupEntry Title="Strength" Value="5"></PopupEntry>
+         <PopupEntry Title="Result before matte" Value="6"></PopupEntry>
+      </Uniform>
+
+   </Shader>
+
+   <Page Name="Beauty" Page="0">
+      <Col Name="Frequency split" Col="0" Page="0"></Col>
+      <Col Name="Detail" Col="1" Page="0"></Col>
+      <Col Name="Skin texture" Col="2" Page="0"></Col>
+      <Col Name="Limit and output" Col="3" Page="0"></Col>
+   </Page>
+
+   <Page Name="Texture" Page="1">
+      <Col Name="Tracking" Col="0" Page="1"></Col>
+      <Col Name="Pores" Col="1" Page="1"></Col>
+      <Col Name="Grain" Col="2" Page="1"></Col>
+      <Col Name="Shaping" Col="3" Page="1"></Col>
+   </Page>
+
+</ShaderNodePreset>
