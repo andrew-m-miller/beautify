@@ -125,7 +125,12 @@ void main() {
 	if (useSkinKey) {
 		vec3 c = base      / max(luma(base),      0.0001);
 		vec3 k = keyColour / max(luma(keyColour), 0.0001);
-		float d = length(c - k);
+		// Distance in units of the picked colour's own saturation.  A log
+		// encoding compresses the image's chroma and the pick's chroma by the
+		// same amount, so the ratio keys the same on log and linear material,
+		// and neutral grey sits at exactly 1.0 whatever the encoding.
+		float sat = max(length(k - vec3(1.0)), 0.05);
+		float d = length(c - k) / sat;
 		m *= 1.0 - smoothstep(keyRange, keyRange + max(keySoftness, 0.0001), d);
 	}
 

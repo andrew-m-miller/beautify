@@ -143,6 +143,13 @@ hair, warm wood and tungsten-lit walls will key too. It multiplies with the
 matte input rather than replacing it, so a rough garbage matte still works
 alongside it.
 
+The range and softness are measured against the picked colour's own saturation,
+which is what makes the sliders behave the same on log and linear material — a
+log encoding compresses the image's colour and the pick's colour by the same
+amount, so the ratio comes out unchanged. Neutral grey always sits at exactly 1
+on the range slider, whatever the plate's encoding: keep range plus softness
+below 1 and grey and white can never creep into the key.
+
 *De-shine* compresses hot speculars in the base band — the oily patch on a
 forehead, the highlight down a nose. Set *Shine level* to the luminance where
 the shine starts, then bring *De-shine amount* up: 1 flattens the shine all the

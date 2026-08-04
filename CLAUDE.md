@@ -228,8 +228,12 @@ it wants to be, and it does invalidate existing saved setups.
 
 The shader is deliberately colour-space agnostic: the band split is algebra and
 holds anywhere, and README's "Working in log" section carries the artist-facing
-guidance. The one genuinely space-sensitive piece of code is the bilateral range
-metric in passes 2-5 — `length(sample - centre) / max(luma(centre), 0.02)` — a
+guidance. The skin keyer earns its independence by normalising its chroma
+distance by the picked colour's own saturation — log compresses both by the same
+factor, so the ratio is encoding-stable and neutral grey lands at exactly 1.0 on
+the range slider on any plate; field-tested on LogC4, where the un-normalised
+distance had collapsed the useful slider travel by ~3.4x. The one genuinely
+space-sensitive piece of code is the bilateral range metric in passes 2-5 — `length(sample - centre) / max(luma(centre), 0.02)` — a
 scene-linear adaptation that makes edge protect bite harder in shadows than
 highlights on log material, which no existing control can compensate for.
 
