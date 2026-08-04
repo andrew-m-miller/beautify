@@ -117,7 +117,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
          <SubUniform Default="0.92" Min="-100.0" Max="100.0" ResDependent="None"></SubUniform>
          <SubUniform Default="0.85" Min="-100.0" Max="100.0" ResDependent="None"></SubUniform>
       </Uniform>
-      <Uniform Name="texShading" DisplayName="Shading response" Page="0" Col="2" Row="4" Type="float" Default="0.0" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texMode" UIConditionValue="0" UIConditionType="Disable" Tooltip="In Add mode, fades the texture out of the shadows in step with the base. Multiply mode does this on its own"></Uniform>
+      <Uniform Name="texShading" DisplayName="Shading response" Page="0" Col="2" Row="4" Type="float" Default="0.0" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texMode" UIConditionValue="1" UIConditionType="Disable" Tooltip="In Add mode, fades the texture out of the shadows in step with the base. Multiply mode does this on its own"></Uniform>
 
       <Uniform Name="matteChannel" DisplayName="Matte channel" Page="1" Col="0" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Which channel of the matte input drives the strength">
          <PopupEntry Title="Luminance" Value="0"></PopupEntry>

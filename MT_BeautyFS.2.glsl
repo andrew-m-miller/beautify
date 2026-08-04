@@ -33,6 +33,10 @@ void main() {
 
 	float stride  = float(q + 1);
 	float support = min(ceil(sigma * 3.0), 600.0);
+
+	// Keep at least one tap pair - a stride wider than the support would
+	// skip the loop and silently turn Draft and Fast into an identity.
+	if (stride > support) stride = support;
 	float denom   = 2.0 * sigma * sigma;
 
 	bool bilateral = edgeProtect > 0.001;
