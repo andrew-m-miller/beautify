@@ -30,6 +30,7 @@ uniform float matteGain, shadowLevel, highlightLevel;
 uniform bool  useSkinKey;
 uniform vec3  keyColour;
 uniform float keyRange, keySoftness;
+uniform float deshineAmount, deshineLevel, deshineSoftness;
 uniform bool  clampNegative;
 uniform int   viewMode;
 
@@ -41,6 +42,41 @@ float luma(vec3 c) {
 	return dot(c, vec3(0.2126, 0.7152, 0.0722));
 }
 
+// Soft knee compression of the base luminance, for taking the shine off an oily
+// forehead or nose.
+//
+// The knee spans level*(1-softness) to level*(1+softness), carrying the slope
+// from 1 below it to 1-amount above it, so the curve is continuous in value and
+// in slope at both ends - a hard corner at the level would band across a
+// forehead, where the falloff is slow and the quantisation visible.
+// Below the knee the colour is returned untouched rather than scaled by 1.0, so
+// nothing outside the compressed range is even rounded.
+vec3 deshine(vec3 c, float l) {
+	float t = max(deshineLevel, 0.0);
+	float s = 1.0 - clamp(deshineAmount, 0.0, 1.0);
+	// Floored so that softness or level at 0 gives a hard knee rather than a
+	// divide by zero.
+	float w = max(t * clamp(deshineSoftness, 0.0, 1.0), 1e-6);
+
+	float lo = t - w;
+	if (l <= lo) {
+		return c;
+	}
+
+	float y;
+	if (l >= t + w) {
+		y = t + s * (l - t);
+	} else {
+		float d = l - lo;
+		y = lo + d + (s - 1.0) * d * d / (4.0 * w);
+	}
+
+	// Scaling by the luminance ratio rather than offsetting keeps the ratios
+	// between the channels, so the shine comes down without the colour of the
+	// skin under it shifting.
+	return c * (y / max(l, 1e-4));
+}
+
 void main() {
 	vec2 uv = gl_FragCoord.xy / vec2(adsk_result_w, adsk_result_h);
 
@@ -49,6 +85,10 @@ void main() {
 	vec3 base = texture2D(adsk_results_pass5, uv).rgb;
 
 	vec3 fineBand = f.rgb - mid.rgb;
+	// Both bands stay measured against the untouched base.  De-shine below
+	// replaces only the base term of the recombination; folding it in here as
+	// well would put it on both sides of the subtraction and cancel it out at
+	// unity detail gains.
 	vec3 midBand  = mid.rgb - base;
 
 	// The synthetic texture is high-passed against its own blur, so it lands in
@@ -91,7 +131,15 @@ void main() {
 	}
 	m *= clamp(strength, 0.0, 1.0);
 
-	vec3 beauty = base + midBand * midDetail + fineBand * fineDetail;
+	// The branch keeps the off path bit exact; the tonal limits and the skin key
+	// above deliberately still read the original base, so de-shining does not
+	// move where either of them bites.
+	vec3 deshinedBase = base;
+	if (deshineAmount > 0.0) {
+		deshinedBase = deshine(base, l);
+	}
+
+	vec3 beauty = deshinedBase + midBand * midDetail + fineBand * fineDetail;
 
 	vec3 tex = texHP * TEX_NORM * texAmount * texTint;
 	if (texAmount > 0.0) {
@@ -110,7 +158,7 @@ void main() {
 
 	vec3 result = mix(f.rgb, beauty, m);
 
-	if      (viewMode == 1) result = base;
+	if      (viewMode == 1) result = deshinedBase;
 	else if (viewMode == 2) result = midBand + 0.5;
 	else if (viewMode == 3) result = fineBand + 0.5;
 	else if (viewMode == 4) result = texHP * TEX_NORM * max(texAmount, 1.0) * texTint + 0.5;

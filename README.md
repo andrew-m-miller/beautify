@@ -110,6 +110,24 @@ hair, warm wood and tungsten-lit walls will key too. It multiplies with the
 matte input rather than replacing it, so a rough garbage matte still works
 alongside it.
 
+*De-shine* compresses hot speculars in the base band — the oily patch on a
+forehead, the highlight down a nose. Set *Shine level* to the luminance where
+the shine starts, then bring *De-shine amount* up: 1 flattens the shine all the
+way down to the level, and anything below the level is left exactly as it was.
+*Shine softness* is the width of the knee into the compression as a fraction of
+the level, so the change eases in rather than cornering at one value — keep it
+wide on a slow falloff like a forehead, narrow it to bite only on the hot core.
+Set *View* to **Base** to see what you are compressing; that view shows the
+de-shined base.
+
+It works on the base rather than the front, so it takes the shine down without
+touching pores or blemishes, and it scales the colour by the luminance ratio
+rather than subtracting, so the skin under the shine keeps its colour. It sits
+inside the beauty result, which means the matte, *Strength*, the tonal limits
+and the skin key all gate it the way they gate everything else — worth knowing
+if you have set *Protect highlights*, because that will hold the de-shine off
+the speculars along with everything else.
+
 ### Texture page
 
 *Tracking* is the texture space, the ST map green flip and the offset.
@@ -151,8 +169,9 @@ but three controls feel different on log material:
 - **Texture mode.** Use **Add**. Adding in log is multiplication in linear, so
   Add on a log plate *is* the photographic multiply behaviour. Multiply mode on
   log code values compounds the effect instead.
-- **Protect highlights.** Log code values live in 0–1, so the useful range of
-  the control is 0–1 rather than the 0–100 it spans for scene-linear speculars.
+- **Protect highlights** and **Shine level.** Log code values live in 0–1, so
+  the useful range of both controls is 0–1 rather than the 0–100 they span for
+  scene-linear speculars — expect to set them near the bottom of the slider.
 - **Edge protect.** The range weighting is normalised for scene-linear
   contrast, so on log material high values bite harder in the shadows than the
   highlights. If softening seems to stall in dark areas, back it off.

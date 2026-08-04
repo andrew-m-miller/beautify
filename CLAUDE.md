@@ -126,6 +126,13 @@ which is what makes them worth stating.
   would be harmless but wasteful; reading it from 5 would be wrong.
 - **Both `baseRadius` and `midRadius` are needed in passes 4 and 5** to compute
   the quadrature sigma.
+- **De-shine replaces only the base *term* of the recombination, never the base
+  the bands are measured against.** `midBand` stays `mid.rgb - base`; `beauty`
+  uses `deshinedBase`. Take `midBand` off the de-shined base instead and the
+  base cancels out of the sum — at unity detail gains the result is exactly the
+  front again and the control silently does nothing. The tonal limits and the
+  skin key read the original base luma for a related reason: de-shining must not
+  move where they bite.
 
 ## Why the texture is generated in pass 1
 
