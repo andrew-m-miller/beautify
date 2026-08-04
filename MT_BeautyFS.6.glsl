@@ -27,6 +27,9 @@ uniform vec3  texTint;
 uniform int   matteChannel;
 uniform bool  invertMatte;
 uniform float matteGain, shadowLevel, highlightLevel;
+uniform bool  useSkinKey;
+uniform vec3  keyColour;
+uniform float keyRange, keySoftness;
 uniform bool  clampNegative;
 uniform int   viewMode;
 
@@ -65,6 +68,17 @@ void main() {
 
 	if (invertMatte) m = 1.0 - m;
 	m = clamp(m * matteGain, 0.0, 1.0);
+
+	// Skin key, also off the base for the same reason as the tonal limits below.
+	// Dividing each colour by its own luma keys on chroma alone, so the same
+	// skin stays keyed through shading falloff and exposure changes instead of
+	// only at the level the colour was picked at.
+	if (useSkinKey) {
+		vec3 c = base      / max(luma(base),      0.0001);
+		vec3 k = keyColour / max(luma(keyColour), 0.0001);
+		float d = length(c - k);
+		m *= 1.0 - smoothstep(keyRange, keyRange + max(keySoftness, 0.0001), d);
+	}
 
 	// Tonal limits work off the base, so grain and texture in the front cannot
 	// make the falloff chatter.

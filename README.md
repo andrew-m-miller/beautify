@@ -97,6 +97,19 @@ boosted detail pushing dark pixels below zero.
 inverts and gains it. *Tonal limits* fade the effect out of the shadows and
 highlights based on the base band, so speculars stay intact.
 
+*Skin key* limits the effect to skin coloured pixels, so the node can place
+itself without an external matte. Pick *Skin colour* off the plate with the
+eyedropper — a mid tone cheek, not a specular or a shadow — then open *Key
+range* until the whole face is held and pull *Key softness* to taste. Set *View*
+to **Strength** to see what you are keying.
+
+The key measures colour only, with brightness divided out, so one sample holds
+across the shading on a face and does not slide when the exposure changes.
+That also means it cannot tell skin from anything else the same colour: brown
+hair, warm wood and tungsten-lit walls will key too. It multiplies with the
+matte input rather than replacing it, so a rough garbage matte still works
+alongside it.
+
 ### Texture page
 
 *Tracking* is the texture space, the ST map green flip and the offset.

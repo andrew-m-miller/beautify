@@ -130,6 +130,15 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="matteGain" DisplayName="Matte gain" Page="1" Col="0" Row="3" Type="float" Default="1.0" Min="0.0" Max="10.0" Inc="0.01" ResDependent="None" Tooltip="Multiplies the matte before it is clamped, for pushing a soft matte up to solid"></Uniform>
       <Uniform Name="shadowLevel" DisplayName="Protect shadows" Page="1" Col="1" Row="1" Type="float" Default="0.0" Min="0.0" Max="1.0" Inc="0.001" ResDependent="None" Tooltip="Fades the effect out below this luminance in the base. 0 is off"></Uniform>
       <Uniform Name="highlightLevel" DisplayName="Protect highlights" Page="1" Col="1" Row="2" Type="float" Default="100.0" Min="0.0" Max="100.0" Inc="0.01" ResDependent="None" Tooltip="Fades the effect out above this luminance in the base, which keeps speculars intact. 100 is off"></Uniform>
+
+      <Uniform Name="useSkinKey" DisplayName="Skin key" Page="1" Col="2" Row="1" Type="bool" Default="False" Tooltip="Limit the effect to skin coloured pixels, so the node can place itself without an external matte. Multiplies into whatever the matte input is doing"></Uniform>
+      <Uniform Name="keyColour" DisplayName="Skin colour" Page="1" Col="2" Row="2" Type="vec3" ValueType="Colour" Inc="0.01" Action3DWidget="False" IconType="None" UIConditionSource="useSkinKey" UIConditionValue="True" UIConditionType="Disable" Tooltip="The colour to key on - pick it off the plate with the eyedropper, from a mid tone cheek rather than a specular or a shadow">
+         <SubUniform Default="0.62" Min="0.0" Max="100.0" ResDependent="None"></SubUniform>
+         <SubUniform Default="0.42" Min="0.0" Max="100.0" ResDependent="None"></SubUniform>
+         <SubUniform Default="0.32" Min="0.0" Max="100.0" ResDependent="None"></SubUniform>
+      </Uniform>
+      <Uniform Name="keyRange" DisplayName="Key range" Page="1" Col="2" Row="3" Type="float" Default="0.25" Min="0.0" Max="2.0" Inc="0.001" ResDependent="None" UIConditionSource="useSkinKey" UIConditionValue="True" UIConditionType="Disable" Tooltip="How far a colour can drift from the skin colour and still get the full effect. Brightness is ignored, so this is a spread of hue and saturation only"></Uniform>
+      <Uniform Name="keySoftness" DisplayName="Key softness" Page="1" Col="2" Row="4" Type="float" Default="0.25" Min="0.0" Max="2.0" Inc="0.001" ResDependent="None" UIConditionSource="useSkinKey" UIConditionValue="True" UIConditionType="Disable" Tooltip="Width of the falloff beyond the range. Wide keeps the edge of the key invisible, narrow makes it bite harder on lips and background"></Uniform>
       <Uniform Name="clampNegative" DisplayName="Clamp negatives" Page="0" Col="3" Row="2" Type="bool" Default="True" Tooltip="Clamp the result at zero, so boosted detail cannot push dark pixels negative"></Uniform>
       <Uniform Name="viewMode" DisplayName="View" Page="0" Col="3" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Look at the individual bands while you set the radii. The band views are offset by 0.5 so you can see the negative half. The procedural texture view shows at least full strength, so the pattern stays visible while you dial the amount in">
          <PopupEntry Title="Result" Value="0"></PopupEntry>
@@ -153,6 +162,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
    <Page Name="Matte" Page="1">
       <Col Name="Strength matte" Col="0" Page="1"></Col>
       <Col Name="Tonal limits" Col="1" Page="1"></Col>
+      <Col Name="Skin key" Col="2" Page="1"></Col>
    </Page>
 
    <Page Name="Texture" Page="2">
