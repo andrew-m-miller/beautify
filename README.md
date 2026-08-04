@@ -129,3 +129,17 @@ areas that got over-smoothed.
 Radii are in pixels at the working resolution, so they are not resolution
 independent — a setup built at HD will need the radii and pore size scaled if
 you move it to 4K.
+
+## Working in log
+
+The band split is pure algebra, so the shader is correct in any colour space —
+but three controls feel different on log material:
+
+- **Texture mode.** Use **Add**. Adding in log is multiplication in linear, so
+  Add on a log plate *is* the photographic multiply behaviour. Multiply mode on
+  log code values compounds the effect instead.
+- **Protect highlights.** Log code values live in 0–1, so the useful range of
+  the control is 0–1 rather than the 0–100 it spans for scene-linear speculars.
+- **Edge protect.** The range weighting is normalised for scene-linear
+  contrast, so on log material high values bite harder in the shadows than the
+  highlights. If softening seems to stall in dark areas, back it off.
