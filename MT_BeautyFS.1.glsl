@@ -112,11 +112,19 @@ void main() {
 
 	vec2 p = uv * (adsk_result_w / max(texScale, 0.5));
 
+	// Rotation and aspect pivot on the frame centre, so the pattern spins
+	// and stretches in place instead of sweeping in from the corner.
+	vec2 pivot = vec2(0.5, 0.5 * adsk_result_h / adsk_result_w)
+	           * (adsk_result_w / max(texScale, 0.5));
+	p -= pivot;
+
 	float a = radians(texRotate);
 	float cs = cos(a);
 	float sn = sin(a);
 	p = vec2(p.x * cs - p.y * sn, p.x * sn + p.y * cs);
 	p.x /= max(texAspect, 0.01);
+
+	p += pivot;
 
 	p += vec2(hash21(vec2(texSeed, 3.7)), hash21(vec2(texSeed, 11.3))) * 1024.0;
 

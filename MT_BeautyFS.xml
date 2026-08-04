@@ -131,7 +131,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="shadowLevel" DisplayName="Protect shadows" Page="1" Col="1" Row="1" Type="float" Default="0.0" Min="0.0" Max="1.0" Inc="0.001" ResDependent="None" Tooltip="Fades the effect out below this luminance in the base. 0 is off"></Uniform>
       <Uniform Name="highlightLevel" DisplayName="Protect highlights" Page="1" Col="1" Row="2" Type="float" Default="100.0" Min="0.0" Max="100.0" Inc="0.01" ResDependent="None" Tooltip="Fades the effect out above this luminance in the base, which keeps speculars intact. 100 is off"></Uniform>
       <Uniform Name="clampNegative" DisplayName="Clamp negatives" Page="0" Col="3" Row="2" Type="bool" Default="True" Tooltip="Clamp the result at zero, so boosted detail cannot push dark pixels negative"></Uniform>
-      <Uniform Name="viewMode" DisplayName="View" Page="0" Col="3" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Look at the individual bands while you set the radii. The band views are offset by 0.5 so you can see the negative half">
+      <Uniform Name="viewMode" DisplayName="View" Page="0" Col="3" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Look at the individual bands while you set the radii. The band views are offset by 0.5 so you can see the negative half. The procedural texture view shows at least full strength, so the pattern stays visible while you dial the amount in">
          <PopupEntry Title="Result" Value="0"></PopupEntry>
          <PopupEntry Title="Base" Value="1"></PopupEntry>
          <PopupEntry Title="Mid band" Value="2"></PopupEntry>
