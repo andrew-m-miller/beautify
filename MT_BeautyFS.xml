@@ -17,6 +17,8 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="stmap" DisplayName="ST map" Type="sampler2D" Index="2" NoInput="Black" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE" Tooltip="Optional UV pass, red and green are used as texture coordinates so the procedural texture sticks to the skin as it moves"></Uniform>
       <Uniform Name="texinput" DisplayName="Texture" Type="sampler2D" Index="3" NoInput="Black" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_REPEAT" GL_TEXTURE_WRAP_T="GL_REPEAT" Tooltip="Optional patch of real skin, tiled as the texture when Texture source is set to Input. Defaults to black, which produces no texture, so leave Texture source on Procedural unless you have connected one"></Uniform>
 
+      <Uniform Name="resRelative" DisplayName="Scale with res" Page="0" Col="3" Row="3" Type="bool" Default="False" Tooltip="Scales the blur radii and the pore size with the frame width, so a setup carries between HD and 4K without redialling. Calibrated so the values still mean pixels at 1920 wide"></Uniform>
+
       <Uniform Name="texSource" DisplayName="Texture source" Page="3" Col="2" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Procedural builds the texture from the pore, grain and micro layers. Input tiles the Texture input through the same coordinates instead, one tile per pore size, so scale, aspect, rotate, seed, warp and contrast all still apply">
          <PopupEntry Title="Procedural" Value="0"></PopupEntry>
          <PopupEntry Title="Input" Value="1"></PopupEntry>
@@ -48,6 +50,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="fineRough" DisplayName="Grain roughness" Page="2" Col="3" Row="4" Type="float" Default="0.55" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="How much each octave contributes relative to the one before it"></Uniform>
       <Uniform Name="microAmount" DisplayName="Micro amount" Page="3" Col="0" Row="1" Type="float" Default="0.2" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Weight of the finest noise layer, roughly the scale of peach fuzz"></Uniform>
       <Uniform Name="microFreq" DisplayName="Micro scale" Page="3" Col="0" Row="2" Type="float" Default="7.0" Min="0.5" Max="80.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Frequency of the finest noise layer, relative to the pore spacing"></Uniform>
+      <Uniform Name="microAnimate" DisplayName="Animate micro" Page="3" Col="0" Row="3" Type="bool" Default="False" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Re-randomises the micro layer every frame, so softened skin keeps something that reads as live grain rather than texture stuck to the frame. The pores and the grain stay locked"></Uniform>
 
       <Uniform Name="warpAmount" DisplayName="Warp amount" Page="3" Col="1" Row="1" Type="float" Default="0.25" Min="0.0" Max="2.0" Inc="0.01" ResDependent="None" Tooltip="Distorts the texture coordinates so the cell structure never reads as a grid"></Uniform>
       <Uniform Name="warpFreq" DisplayName="Warp scale" Page="3" Col="1" Row="2" Type="float" Default="0.35" Min="0.01" Max="8.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the warp - low values bend large areas, high values roughen individual cells"></Uniform>
@@ -67,6 +70,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
          <PopupEntry Title="Draft" Value="2"></PopupEntry>
          <PopupEntry Title="Fast" Value="3"></PopupEntry>
       </Uniform>
+      <Uniform Name="resRelative" Type="bool"><Duplicate></Duplicate></Uniform>
 
    </Shader>
 
@@ -77,6 +81,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="midRadius" Type="float"><Duplicate></Duplicate></Uniform>
       <Uniform Name="edgeProtect" Type="float"><Duplicate></Duplicate></Uniform>
       <Uniform Name="quality" Type="int"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="resRelative" Type="bool"><Duplicate></Duplicate></Uniform>
 
    </Shader>
 
@@ -88,6 +93,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="midRadius" Type="float"><Duplicate></Duplicate></Uniform>
       <Uniform Name="edgeProtect" Type="float"><Duplicate></Duplicate></Uniform>
       <Uniform Name="quality" Type="int"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="resRelative" Type="bool"><Duplicate></Duplicate></Uniform>
 
    </Shader>
 
@@ -99,6 +105,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="midRadius" Type="float"><Duplicate></Duplicate></Uniform>
       <Uniform Name="edgeProtect" Type="float"><Duplicate></Duplicate></Uniform>
       <Uniform Name="quality" Type="int"><Duplicate></Duplicate></Uniform>
+      <Uniform Name="resRelative" Type="bool"><Duplicate></Duplicate></Uniform>
 
    </Shader>
 
@@ -113,6 +120,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="midDetail" DisplayName="Mid detail" Page="0" Col="1" Row="1" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Gain on the mid frequency band. 1 leaves it alone, 0 removes blemishes and blotches completely, above 1 exaggerates them"></Uniform>
       <Uniform Name="fineDetail" DisplayName="Fine detail" Page="0" Col="1" Row="2" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Gain on the fine band. 1 leaves the natural skin texture alone, 0 removes it ready for the procedural texture to replace it, above 1 sharpens"></Uniform>
       <Uniform Name="strength" DisplayName="Strength" Page="0" Col="1" Row="3" Type="float" Default="1.0" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="Master mix back over the front, on top of whatever the matte input is doing"></Uniform>
+      <Uniform Name="midChroma" DisplayName="Mid colour" Page="0" Col="1" Row="4" Type="float" Default="1.0" Min="0.0" Max="2.0" Inc="0.01" ResDependent="None" Tooltip="Gain on the colour of the mid band only. 0 takes out red blotches and colour unevenness while leaving the luminance structure to Mid detail, above 1 exaggerates it"></Uniform>
 
       <Uniform Name="texAmount" DisplayName="Texture amount" Page="0" Col="2" Row="1" Type="float" Default="0.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Strength of the procedural skin texture. Start around 0.5 with the fine detail pulled to 0"></Uniform>
       <Uniform Name="texMode" DisplayName="Texture mode" Page="0" Col="2" Row="2" Type="int" ValueType="Popup" Default="0" Tooltip="Multiply scales the texture with local brightness, which is the more photographic behaviour. Add lays it on at a constant level">

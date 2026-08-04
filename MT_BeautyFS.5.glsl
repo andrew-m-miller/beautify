@@ -8,6 +8,7 @@ uniform float adsk_result_w, adsk_result_h;
 
 uniform float baseRadius, midRadius, edgeProtect;
 uniform int   quality;
+uniform bool  resRelative;
 
 float luma(vec3 c) {
 	return dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -18,7 +19,17 @@ void main() {
 	vec2 xy = gl_FragCoord.xy;
 	vec4 centre = texture2D(adsk_results_pass4, xy / res);
 
-	float sigma = sqrt(max(baseRadius * baseRadius - midRadius * midRadius, 0.0));
+	// Both radii take the same scale factor, or the quadrature below would no
+	// longer describe the pair of blurs actually being run.
+	float bR = baseRadius;
+	float mR = midRadius;
+	if (resRelative) {
+		float rs = adsk_result_w / 1920.0;
+		bR *= rs;
+		mR *= rs;
+	}
+
+	float sigma = sqrt(max(bR * bR - mR * mR, 0.0));
 	if (sigma < 0.35) {
 		gl_FragColor = centre;
 		return;

@@ -125,7 +125,9 @@ which is what makes them worth stating.
   texture's blurred copy from pass *3*, not pass 5. Blurring it further in 4/5
   would be harmless but wasteful; reading it from 5 would be wrong.
 - **Both `baseRadius` and `midRadius` are needed in passes 4 and 5** to compute
-  the quadrature sigma.
+  the quadrature sigma — and when `resRelative` is on, both must take the *same*
+  scale factor. Scale one and not the other and `sqrt(base² - mid²)` stops
+  describing the pair of blurs actually being run.
 - **De-shine replaces only the base *term* of the recombination, never the base
   the bands are measured against.** `midBand` stays `mid.rgb - base`; `beauty`
   uses `deshinedBase`. Take `midBand` off the de-shined base instead and the
@@ -212,10 +214,15 @@ Fast=4). Support is capped at 600, so a `baseRadius` above ~200 silently
 truncates the kernel rather than getting slower. Edge protect adds a `length()`
 and an `exp()` per tap and is branched off entirely when set to 0.
 
-Radii and pore size are in pixels at the working resolution and are not
-resolution independent — every `ResDependent` attribute is `"None"`. A setup
-built at HD needs them scaled for 4K. If this becomes a problem, that attribute
-is the lever, but changing it will invalidate existing saved setups.
+Radii and pore size are in pixels at the working resolution — every
+`ResDependent` attribute is `"None"`. Moving a setup between formats is what
+`resRelative` (*Scale with res*) is for: passes 2-5 multiply both radii, and pass
+1 multiplies the pore cell size, by `adsk_result_w / 1920.0`, so the numbers go
+on meaning pixels at 1920 wide and a setup built at HD lands the same way at 4K.
+Off is a bit-exact no-op, and so is on at 1920, so the toggle invalidates no
+saved setup. Flipping the `ResDependent` attributes is still the alternative, but
+it is the invasive one — it makes every setup resolution-relative whether or not
+it wants to be, and it does invalidate existing saved setups.
 
 ## Colour space
 

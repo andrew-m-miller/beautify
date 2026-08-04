@@ -13,6 +13,7 @@ uniform sampler2D stmap;
 uniform sampler2D texinput;  // sampled skin patch, wrapped GL_REPEAT
 
 uniform float adsk_result_w, adsk_result_h;
+uniform float adsk_time;
 
 uniform int   texSource;     // 0 = procedural generator, 1 = sampled input
 uniform int   texSpace;      // 0 = screen space, 1 = ST map
@@ -22,10 +23,12 @@ uniform float texSeed;
 uniform float texScale;      // size of one pore cell, in pixels
 uniform float texAspect;
 uniform float texRotate;
+uniform bool  resRelative;
 
 uniform float poreAmount, poreSize, poreIrregular, poreDepthVar;
 uniform float fineAmount, fineFreq, fineRough, microAmount, microFreq;
 uniform int   fineOctaves;
+uniform bool  microAnimate;
 uniform float warpAmount, warpFreq, texContrast;
 
 float luma(vec3 c) {
@@ -117,12 +120,18 @@ void main() {
 
 	uv += texOffset / adsk_result_w;
 
-	vec2 p = uv * (adsk_result_w / max(texScale, 0.5));
+	// Scaling the cell size with the frame width leaves the pattern frequency
+	// where it was relative to the frame, since the width divides straight back
+	// out below.  The same factor scales the blur radii in passes 2-5.
+	float cellPx = max(texScale, 0.5);
+	if (resRelative) cellPx *= adsk_result_w / 1920.0;
+
+	vec2 p = uv * (adsk_result_w / cellPx);
 
 	// Rotation and aspect pivot on the frame centre, so the pattern spins
 	// and stretches in place instead of sweeping in from the corner.
 	vec2 pivot = vec2(0.5, 0.5 * adsk_result_h / adsk_result_w)
-	           * (adsk_result_w / max(texScale, 0.5));
+	           * (adsk_result_w / cellPx);
 	p -= pivot;
 
 	float a = radians(texRotate);
@@ -164,7 +173,16 @@ void main() {
 
 		t = (pore - 1.0) * poreAmount;
 		t += fbm(p * fineFreq, oct, clamp(fineRough, 0.0, 1.0)) * fineAmount;
-		t += vnoise(p * microFreq + 7.13) * microAmount;
+
+		// Only the micro layer is walked per frame.  Pores and grain stay
+		// locked to the plate, so the skin keeps its structure and just the
+		// finest layer reads as live rather than painted on.
+		vec2 microP = p * microFreq + 7.13;
+		if (microAnimate) {
+			float fr = floor(adsk_time);
+			microP += vec2(hash21(vec2(fr, 19.73)), hash21(vec2(fr, 53.11))) * 512.0;
+		}
+		t += vnoise(microP) * microAmount;
 	}
 
 	// Contrast shaping about zero, so the mean does not drift with the control.

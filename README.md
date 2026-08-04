@@ -103,6 +103,14 @@ put it back to Best to render.
 the band alone, 0 removes it, above 1 exaggerates it. *Strength* is a master mix
 back over the front, on top of whatever the matte is doing.
 
+*Mid colour* is a gain on the colour of the mid band alone. Pull it down to take
+the red out of blotchy skin while *Mid detail* holds on to the shading that gives
+the face its form — at 0 the band keeps all of its luminance structure and none
+of its colour, so unevenness in tone goes without the face going flat. It is
+often the gentler first move: colour blotches read at a distance, and taking them
+out costs nothing in detail. Above 1 it exaggerates them, which is mostly useful
+for finding them.
+
 **Skin texture** — *Texture amount* is the strength of the procedural texture.
 *Texture mode* chooses Multiply, where the texture scales with local brightness
 (the more photographic behaviour, and the better default on scene-linear
@@ -112,7 +120,9 @@ way real skin does. *Shading response* only applies in Add mode.
 
 **Output** — *View* shows the individual bands while you set the radii; the band
 views are offset by 0.5 so the negative half is visible. *Clamp negatives* stops
-boosted detail pushing dark pixels below zero.
+boosted detail pushing dark pixels below zero. *Scale with res* makes the radii
+and the pore size follow the frame width instead of standing for literal pixels,
+so a setup carries between formats — see the note at the end of *Typical use*.
 
 ### Matte page
 
@@ -164,7 +174,13 @@ only to the procedural generator.
 The micro layer (roughly peach fuzz scale), the domain warp that keeps the cell
 structure from reading as a grid, and the contrast shaping.
 
-*Source* chooses where the texture comes from: **Procedural** builds it from the
+*Animate micro* re-randomises the micro layer on every frame. Skin that has been
+softened and had synthetic texture put back can read as a still frame with a face
+moving underneath it; walking the finest layer gives it something that behaves
+like live grain instead. Only the micro layer moves — the pores and the grain
+stay locked to the plate, so the skin keeps its structure and only the surface
+shimmer changes. It applies to the generator only, so it greys out when *Source*
+is set to **Input**. where the texture comes from: **Procedural** builds it from the
 pore, grain and micro layers, **Input** tiles the **Texture** input instead. The
 controls that only feed the generator grey out in Input mode.
 
@@ -191,9 +207,13 @@ synthetic texture on top often sits better than either extreme, because the
 natural texture keeps the skin anchored while the synthetic layer evens out the
 areas that got over-smoothed.
 
-Radii are in pixels at the working resolution, so they are not resolution
-independent — a setup built at HD will need the radii and pore size scaled if
-you move it to 4K.
+Radii and pore size are in pixels at the working resolution, so a setup built at
+HD does not by itself survive a move to 4K. *Scale with res*, on the Beauty page,
+is the fix: it scales the radii and the pore size with the frame width, so the
+numbers go on meaning what they meant at 1920 wide and the setup lands the same
+way at any format. Leave it off and the values stay literal pixels — which is
+what you want if you are matching a radius to something you measured on the
+plate at the resolution you are working in.
 
 ## Working in log
 

@@ -11,6 +11,7 @@ uniform float adsk_result_w, adsk_result_h;
 
 uniform float midRadius, edgeProtect;
 uniform int   quality;
+uniform bool  resRelative;
 
 float luma(vec3 c) {
 	return dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -22,6 +23,7 @@ void main() {
 	vec4 centre = texture2D(adsk_results_pass1, xy / res);
 
 	float sigma = midRadius;
+	if (resRelative) sigma *= adsk_result_w / 1920.0;
 	if (sigma < 0.35) {
 		gl_FragColor = centre;
 		return;

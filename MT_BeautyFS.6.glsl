@@ -20,6 +20,7 @@ uniform sampler2D adsk_results_pass5;   // rgb = base blur
 uniform float adsk_result_w, adsk_result_h;
 
 uniform float midDetail, fineDetail, strength;
+uniform float midChroma;
 uniform float texAmount, texShading;
 uniform int   texMode;
 uniform vec3  texTint;
@@ -90,6 +91,14 @@ void main() {
 	// well would put it on both sides of the subtraction and cancel it out at
 	// unity detail gains.
 	vec3 midBand  = mid.rgb - base;
+
+	// Splitting the band into its luma projection and the remainder lets the
+	// colour of a blotch come out while its shading stays for Mid detail to
+	// deal with.  The band is signed, which the projection is happy with.
+	if (midChroma != 1.0) {
+		float bandLuma = luma(midBand);
+		midBand = vec3(bandLuma) + (midBand - vec3(bandLuma)) * midChroma;
+	}
 
 	// The synthetic texture is high-passed against its own blur, so it lands in
 	// the same band as fineBand and carries no DC offset.
