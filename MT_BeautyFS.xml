@@ -7,6 +7,7 @@ Inputs:
   Front    the image to work on
   Matte    drives the strength of the effect
   ST map   optional, tracks the procedural texture onto moving skin
+  Texture  optional, a patch of real skin to tile instead of the generator
 
 Set the fine detail to 0 and the texture amount to around 0.5 for a full texture replacement. Leave the texture amount at 0 and pull the detail gains down for a straight softening.">
 
@@ -14,6 +15,12 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
 
       <Uniform Name="front" DisplayName="Front" Type="sampler2D" Index="0" InputType="Front" NoInput="Error" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE" Tooltip="The image to retouch"></Uniform>
       <Uniform Name="stmap" DisplayName="ST map" Type="sampler2D" Index="2" NoInput="Black" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_CLAMP_TO_EDGE" GL_TEXTURE_WRAP_T="GL_CLAMP_TO_EDGE" Tooltip="Optional UV pass, red and green are used as texture coordinates so the procedural texture sticks to the skin as it moves"></Uniform>
+      <Uniform Name="texinput" DisplayName="Texture" Type="sampler2D" Index="3" NoInput="Black" Mipmaps="False" GL_TEXTURE_MIN_FILTER="GL_LINEAR" GL_TEXTURE_MAG_FILTER="GL_LINEAR" GL_TEXTURE_WRAP_S="GL_REPEAT" GL_TEXTURE_WRAP_T="GL_REPEAT" Tooltip="Optional patch of real skin, tiled as the texture when Texture source is set to Input. Defaults to black, which produces no texture, so leave Texture source on Procedural unless you have connected one"></Uniform>
+
+      <Uniform Name="texSource" DisplayName="Texture source" Page="3" Col="2" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Procedural builds the texture from the pore, grain and micro layers. Input tiles the Texture input through the same coordinates instead, one tile per pore size, so scale, aspect, rotate, seed, warp and contrast all still apply">
+         <PopupEntry Title="Procedural" Value="0"></PopupEntry>
+         <PopupEntry Title="Input" Value="1"></PopupEntry>
+      </Uniform>
 
       <Uniform Name="texScale" DisplayName="Pore size" Page="2" Col="1" Row="1" Type="float" Default="26.0" Min="1.0" Max="4000.0" Inc="0.5" ResDependent="None" Tooltip="Spacing of the pore cells, in pixels of the current resolution"></Uniform>
       <Uniform Name="texAspect" DisplayName="Texture aspect" Page="2" Col="1" Row="2" Type="float" Default="1.0" Min="0.05" Max="20.0" Inc="0.01" ResDependent="None" Tooltip="Stretches the texture, useful for anamorphic material or for stretching pores along a cheekbone"></Uniform>
@@ -30,17 +37,17 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       </Uniform>
       <Uniform Name="texSeed" DisplayName="Seed" Page="2" Col="1" Row="4" Type="float" Default="3.0" Min="0.0" Max="1000.0" Inc="1.0" ResDependent="None" Tooltip="Changes the random pattern without changing its character"></Uniform>
 
-      <Uniform Name="poreAmount" DisplayName="Pore amount" Page="2" Col="2" Row="1" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Weight of the cellular pore layer"></Uniform>
-      <Uniform Name="poreSize" DisplayName="Pore width" Page="2" Col="2" Row="2" Type="float" Default="0.55" Min="0.02" Max="2.0" Inc="0.01" ResDependent="None" Tooltip="How much of each cell the pore fills - small values give tight dots, large values give a soft dimpled surface"></Uniform>
-      <Uniform Name="poreIrregular" DisplayName="Pore scatter" Page="2" Col="2" Row="3" Type="float" Default="0.85" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="0 puts the pores on a regular grid, 1 scatters them fully"></Uniform>
-      <Uniform Name="poreDepthVar" DisplayName="Pore variation" Page="2" Col="2" Row="4" Type="float" Default="0.6" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="Randomises the depth of each pore so they are not all identical"></Uniform>
+      <Uniform Name="poreAmount" DisplayName="Pore amount" Page="2" Col="2" Row="1" Type="float" Default="1.0" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Weight of the cellular pore layer"></Uniform>
+      <Uniform Name="poreSize" DisplayName="Pore width" Page="2" Col="2" Row="2" Type="float" Default="0.55" Min="0.02" Max="2.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="How much of each cell the pore fills - small values give tight dots, large values give a soft dimpled surface"></Uniform>
+      <Uniform Name="poreIrregular" DisplayName="Pore scatter" Page="2" Col="2" Row="3" Type="float" Default="0.85" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="0 puts the pores on a regular grid, 1 scatters them fully"></Uniform>
+      <Uniform Name="poreDepthVar" DisplayName="Pore variation" Page="2" Col="2" Row="4" Type="float" Default="0.6" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Randomises the depth of each pore so they are not all identical"></Uniform>
 
-      <Uniform Name="fineAmount" DisplayName="Grain amount" Page="2" Col="3" Row="1" Type="float" Default="0.45" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Weight of the fractal noise layer that sits between the pores"></Uniform>
-      <Uniform Name="fineFreq" DisplayName="Grain scale" Page="2" Col="3" Row="2" Type="float" Default="2.2" Min="0.05" Max="40.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the fractal noise, relative to the pore spacing"></Uniform>
-      <Uniform Name="fineOctaves" DisplayName="Grain octaves" Page="2" Col="3" Row="3" Type="int" Default="4" Min="1" Max="8" Inc="1" ResDependent="None" Tooltip="Number of noise octaves - more octaves give finer structure at more cost"></Uniform>
-      <Uniform Name="fineRough" DisplayName="Grain roughness" Page="2" Col="3" Row="4" Type="float" Default="0.55" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="How much each octave contributes relative to the one before it"></Uniform>
-      <Uniform Name="microAmount" DisplayName="Micro amount" Page="3" Col="0" Row="1" Type="float" Default="0.2" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" Tooltip="Weight of the finest noise layer, roughly the scale of peach fuzz"></Uniform>
-      <Uniform Name="microFreq" DisplayName="Micro scale" Page="3" Col="0" Row="2" Type="float" Default="7.0" Min="0.5" Max="80.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the finest noise layer, relative to the pore spacing"></Uniform>
+      <Uniform Name="fineAmount" DisplayName="Grain amount" Page="2" Col="3" Row="1" Type="float" Default="0.45" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Weight of the fractal noise layer that sits between the pores"></Uniform>
+      <Uniform Name="fineFreq" DisplayName="Grain scale" Page="2" Col="3" Row="2" Type="float" Default="2.2" Min="0.05" Max="40.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Frequency of the fractal noise, relative to the pore spacing"></Uniform>
+      <Uniform Name="fineOctaves" DisplayName="Grain octaves" Page="2" Col="3" Row="3" Type="int" Default="4" Min="1" Max="8" Inc="1" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Number of noise octaves - more octaves give finer structure at more cost"></Uniform>
+      <Uniform Name="fineRough" DisplayName="Grain roughness" Page="2" Col="3" Row="4" Type="float" Default="0.55" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="How much each octave contributes relative to the one before it"></Uniform>
+      <Uniform Name="microAmount" DisplayName="Micro amount" Page="3" Col="0" Row="1" Type="float" Default="0.2" Min="0.0" Max="4.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Weight of the finest noise layer, roughly the scale of peach fuzz"></Uniform>
+      <Uniform Name="microFreq" DisplayName="Micro scale" Page="3" Col="0" Row="2" Type="float" Default="7.0" Min="0.5" Max="80.0" Inc="0.01" ResDependent="None" UIConditionSource="texSource" UIConditionValue="0" UIConditionType="Disable" Tooltip="Frequency of the finest noise layer, relative to the pore spacing"></Uniform>
 
       <Uniform Name="warpAmount" DisplayName="Warp amount" Page="3" Col="1" Row="1" Type="float" Default="0.25" Min="0.0" Max="2.0" Inc="0.01" ResDependent="None" Tooltip="Distorts the texture coordinates so the cell structure never reads as a grid"></Uniform>
       <Uniform Name="warpFreq" DisplayName="Warp scale" Page="3" Col="1" Row="2" Type="float" Default="0.35" Min="0.01" Max="8.0" Inc="0.01" ResDependent="None" Tooltip="Frequency of the warp - low values bend large areas, high values roughen individual cells"></Uniform>
@@ -143,12 +150,12 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
       <Uniform Name="deshineLevel" DisplayName="Shine level" Page="1" Col="3" Row="2" Type="float" Default="0.7" Min="0.0" Max="100.0" Inc="0.001" ResDependent="None" Tooltip="Luminance in the base where shine starts. Tones below it are left alone, tones above it are pulled back towards it"></Uniform>
       <Uniform Name="deshineSoftness" DisplayName="Shine softness" Page="1" Col="3" Row="3" Type="float" Default="0.5" Min="0.0" Max="1.0" Inc="0.01" ResDependent="None" Tooltip="Width of the knee into the compression, as a fraction of the level. 0 bends sharply at the level, high values ease in from well below it"></Uniform>
       <Uniform Name="clampNegative" DisplayName="Clamp negatives" Page="0" Col="3" Row="2" Type="bool" Default="True" Tooltip="Clamp the result at zero, so boosted detail cannot push dark pixels negative"></Uniform>
-      <Uniform Name="viewMode" DisplayName="View" Page="0" Col="3" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Look at the individual bands while you set the radii. The band views are offset by 0.5 so you can see the negative half. The procedural texture view shows at least full strength, so the pattern stays visible while you dial the amount in">
+      <Uniform Name="viewMode" DisplayName="View" Page="0" Col="3" Row="1" Type="int" ValueType="Popup" Default="0" Tooltip="Look at the individual bands while you set the radii. The band views are offset by 0.5 so you can see the negative half. The texture view shows at least full strength, so the pattern stays visible while you dial the amount in">
          <PopupEntry Title="Result" Value="0"></PopupEntry>
          <PopupEntry Title="Base" Value="1"></PopupEntry>
          <PopupEntry Title="Mid band" Value="2"></PopupEntry>
          <PopupEntry Title="Fine band" Value="3"></PopupEntry>
-         <PopupEntry Title="Procedural texture" Value="4"></PopupEntry>
+         <PopupEntry Title="Texture" Value="4"></PopupEntry>
          <PopupEntry Title="Strength" Value="5"></PopupEntry>
          <PopupEntry Title="Result before matte" Value="6"></PopupEntry>
       </Uniform>
@@ -179,6 +186,7 @@ Set the fine detail to 0 and the texture amount to around 0.5 for a full texture
    <Page Name="Fine tune" Page="3">
       <Col Name="Micro" Col="0" Page="3"></Col>
       <Col Name="Shaping" Col="1" Page="3"></Col>
+      <Col Name="Source" Col="2" Page="3"></Col>
    </Page>
 
 </ShaderNodePreset>

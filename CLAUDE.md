@@ -133,6 +133,11 @@ which is what makes them worth stating.
   front again and the control silently does nothing. The tonal limits and the
   skin key read the original base luma for a related reason: de-shining must not
   move where they bite.
+- **The sampled-texture mapping `(luma - 0.5) * 4.0` pairs with the shared
+  `-2..2` clamp and the alpha encode.** A patch's DC offset is removed exactly by
+  the composite's high-pass, so it must not be compensated in pass 1. And
+  `texinput` must keep `GL_REPEAT` wrap in the XML — on clamp wrap the tiling
+  silently degenerates into one stretched patch.
 
 ## Why the texture is generated in pass 1
 

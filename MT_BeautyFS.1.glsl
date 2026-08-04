@@ -1,17 +1,20 @@
 // MT_BeautyFS - pass 1 of 6
 //
-// Passes the front through in RGB and generates the procedural skin texture
-// into alpha.  Generating it here, before the blur chain, means passes 2 and 3
-// hand us a low-passed copy of the same signal: subtracting the two in the
-// composite gives a synthetic texture that sits in exactly the same frequency
-// band as the natural texture it is replacing, with no DC offset to shift skin
-// brightness.
+// Passes the front through in RGB and builds the skin texture into alpha -
+// either from the procedural generator, or by tiling the Texture input through
+// the same coordinates.  Building it here, before the blur chain, means passes
+// 2 and 3 hand us a low-passed copy of the same signal: subtracting the two in
+// the composite gives a synthetic texture that sits in exactly the same
+// frequency band as the natural texture it is replacing, with no DC offset to
+// shift skin brightness.
 
 uniform sampler2D front;
 uniform sampler2D stmap;
+uniform sampler2D texinput;  // sampled skin patch, wrapped GL_REPEAT
 
 uniform float adsk_result_w, adsk_result_h;
 
+uniform int   texSource;     // 0 = procedural generator, 1 = sampled input
 uniform int   texSpace;      // 0 = screen space, 1 = ST map
 uniform bool  stFlipV;
 uniform vec2  texOffset;
@@ -24,6 +27,10 @@ uniform float poreAmount, poreSize, poreIrregular, poreDepthVar;
 uniform float fineAmount, fineFreq, fineRough, microAmount, microFreq;
 uniform int   fineOctaves;
 uniform float warpAmount, warpFreq, texContrast;
+
+float luma(vec3 c) {
+	return dot(c, vec3(0.2126, 0.7152, 0.0722));
+}
 
 // Hash functions after Dave Hoskins - no trig, stable across GPU vendors.
 float hash21(vec2 p) {
@@ -133,21 +140,32 @@ void main() {
 	vec2 w = vec2(vnoise(p * warpFreq), vnoise(p * warpFreq + 41.7));
 	p += w * warpAmount;
 
-	float jitter = clamp(poreIrregular, 0.0, 1.0);
-	vec2 cell = cellular(p, jitter);
+	float t;
+	if (texSource == 1) {
+		// p carries one tile per pore-size square, so GL_REPEAT lays the patch
+		// down at the same scale the generator would have worked at, and the
+		// warp above keeps the repeat from reading as a grid.  Centring on mid
+		// grey is what keeps the encode below in range; the residual offset of
+		// a patch that is not mid grey on average is removed exactly by the
+		// composite's high-pass, so it must not be compensated for here.
+		t = (luma(texture2D(texinput, p).rgb) - 0.5) * 4.0;
+	} else {
+		float jitter = clamp(poreIrregular, 0.0, 1.0);
+		vec2 cell = cellular(p, jitter);
 
-	// Pores read as dimples, so shape the distance field into a signal that
-	// dips towards each feature point and sits flat between them.
-	float pore = smoothstep(0.0, max(poreSize, 0.001), cell.x);
-	pore = 1.0 - (1.0 - pore) * mix(1.0, cell.y, clamp(poreDepthVar, 0.0, 1.0));
+		// Pores read as dimples, so shape the distance field into a signal that
+		// dips towards each feature point and sits flat between them.
+		float pore = smoothstep(0.0, max(poreSize, 0.001), cell.x);
+		pore = 1.0 - (1.0 - pore) * mix(1.0, cell.y, clamp(poreDepthVar, 0.0, 1.0));
 
-	int oct = fineOctaves;
-	if (oct < 1) oct = 1;
-	if (oct > 8) oct = 8;
+		int oct = fineOctaves;
+		if (oct < 1) oct = 1;
+		if (oct > 8) oct = 8;
 
-	float t = (pore - 1.0) * poreAmount;
-	t += fbm(p * fineFreq, oct, clamp(fineRough, 0.0, 1.0)) * fineAmount;
-	t += vnoise(p * microFreq + 7.13) * microAmount;
+		t = (pore - 1.0) * poreAmount;
+		t += fbm(p * fineFreq, oct, clamp(fineRough, 0.0, 1.0)) * fineAmount;
+		t += vnoise(p * microFreq + 7.13) * microAmount;
+	}
 
 	// Contrast shaping about zero, so the mean does not drift with the control.
 	float c = clamp(texContrast, 0.05, 8.0);

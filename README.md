@@ -2,15 +2,16 @@
 
 A frequency separation beauty shader for Autodesk Flame, built as a multi-pass
 Matchbox. It splits the front into three frequency bands, lets you soften or
-boost each one independently, and can generate procedural skin texture to put
-pore-level detail back after the natural texture has been smoothed away.
+boost each one independently, and can put pore-level detail back after the
+natural texture has been smoothed away — either from a procedural generator or
+from a tiled patch of real skin.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | `MT_BeautyFS.xml` | Shader definition: passes, inputs, UI |
-| `MT_BeautyFS.1.glsl` | Front passthrough plus procedural texture generation |
+| `MT_BeautyFS.1.glsl` | Front passthrough plus skin texture generation |
 | `MT_BeautyFS.2.glsl` / `.3.glsl` | Separable detail-radius blur |
 | `MT_BeautyFS.4.glsl` / `.5.glsl` | Separable base-radius blur |
 | `MT_BeautyFS.6.glsl` | Band recombination and composite |
@@ -26,6 +27,7 @@ your Matchbox path) and load `MT_BeautyFS.xml` from the Matchbox browser.
 | **Front** | The image to retouch. Required. |
 | **Matte** | Drives the strength of the effect: white is full effect, black leaves the front untouched. Defaults to white when nothing is connected. |
 | **ST map** | Optional UV pass. Red and green are read as texture coordinates so the procedural texture tracks with the skin. Defaults to black, which produces no texture, so leave *Texture space* on **Screen** unless you have connected one. |
+| **Texture** | Optional patch of real skin, tiled as the texture instead of the generated pattern. Defaults to black, which produces no texture, so leave *Texture source* on **Procedural** unless you have connected one. |
 
 ## How it works
 
@@ -64,6 +66,27 @@ It is built from a scattered cellular layer for the pores, a fractal noise layer
 for the grain between them, and a fine noise layer roughly at the scale of peach
 fuzz, all through a warped coordinate space so the cell structure never reads as
 a grid.
+
+### Using a real patch instead
+
+*Texture source*, on the Fine tune page, swaps the generator for a photographed
+one. Connect a patch of skin to the **Texture** input and set *Texture source*
+to **Input**: the patch is tiled through exactly the same coordinates the
+generator uses, one tile per *Pore size*, so that control now sets the width of
+the tile in pixels rather than the spacing of the cells. Everything else in the
+coordinate pipeline keeps working — *Texture space*, the offset, aspect,
+rotation, seed and the domain warp, which is what stops the tiling reading as a
+repeat. The pore, grain and micro controls have nothing to drive and grey out;
+*Texture contrast* still shapes the result, and the texture still lands in the
+same band and carries no DC offset.
+
+Grade the patch flat before you use it. It is read as luminance centred on mid
+grey, and only the 0–1 range is used, so a scene-linear patch sitting above 1.0
+flattens out to nothing. The high-pass takes care of the patch's overall level
+and of broad shading across it, but it cannot take care of *structure*: a mole,
+a stray hair or a hard edge in the patch will tile visibly across the face. Pick
+an even area and keep it small. A non-square patch is squashed into a square
+tile, so use *Texture aspect* to put it back to shape.
 
 ## Controls
 
@@ -131,14 +154,19 @@ the speculars along with everything else.
 ### Texture page
 
 *Tracking* is the texture space, the ST map green flip and the offset.
-*Pattern* is pore size (cell spacing in pixels at the current resolution),
-aspect, rotation and seed. *Pores* and *Grain* set the character of the two main
-noise layers.
+*Pattern* is pore size (cell spacing in pixels at the current resolution, or the
+width of one tile when *Texture source* is **Input**), aspect, rotation and seed.
+*Pores* and *Grain* set the character of the two main noise layers, and apply
+only to the procedural generator.
 
 ### Fine tune page
 
 The micro layer (roughly peach fuzz scale), the domain warp that keeps the cell
 structure from reading as a grid, and the contrast shaping.
+
+*Source* chooses where the texture comes from: **Procedural** builds it from the
+pore, grain and micro layers, **Input** tiles the **Texture** input instead. The
+controls that only feed the generator grey out in Input mode.
 
 ## Typical use
 
@@ -148,9 +176,15 @@ taste — 0.5 or so keeps the skin looking like skin, lower starts to go plastic
 
 **Replacing texture.** Pull *Fine detail* to 0 to remove the natural texture
 entirely, then bring *Texture amount* up to around 0.5–0.7. Set *Pore size* by
-eye against the plate, using the *Procedural texture* view to judge scale. If
+eye against the plate, using the *Texture* view to judge scale. If
 the shot moves, connect an ST map and switch *Texture space* to **ST map** so
 the texture sticks to the face instead of swimming under it.
+
+If you have a clean patch of the same skin to hand — from elsewhere in the
+frame, or from another take — connect it to the **Texture** input and set
+*Texture source* to **Input** instead of dialling the generator in. The pore,
+grain and micro controls drop out, *Pore size* becomes the width of one tile,
+and everything else is set the same way.
 
 **Both.** Softening the fine band only partly (say 0.4) and adding a little
 synthetic texture on top often sits better than either extreme, because the
