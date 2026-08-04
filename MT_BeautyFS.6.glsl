@@ -88,8 +88,9 @@ void main() {
 			beauty += tex * shade;
 		} else {
 			// Multiplicative: texture rides on the local brightness, which is
-			// the more photographic behaviour on scene-linear material.
-			beauty *= 1.0 + tex;
+			// the more photographic behaviour on scene-linear material.  The
+			// clamp stops a deep pore at high amounts flipping the sign.
+			beauty *= max(1.0 + tex, vec3(0.0));
 		}
 	}
 
