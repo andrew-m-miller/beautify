@@ -177,7 +177,11 @@ docs pages 403 to WebFetch; clone the repo and grep it instead.
   `Type="int" ValueType="Popup"` with `<PopupEntry Title="" Value="">` children.
   `vec2` / `vec3` take one `<SubUniform Default="">` per component; colours are
   `Type="vec3" ValueType="Colour"`. Conditional enabling is
-  `UIConditionSource` / `UIConditionValue` / `UIConditionType="Disable"|"Hide"`.
+  `UIConditionSource` / `UIConditionValue` / `UIConditionType="Disable"|"Hide"` —
+  and the direction is easy to get backwards: `UIConditionValue` names the state
+  in which the control is **active**; the Hide/Disable applies in every other
+  state (per `Ls_Fluid`'s EWA-samples control, which is hidden unless the output
+  popup is at the value that uses it).
 - **A column holds exactly four rows, and `Col` runs 0-3.** Nothing in the
   corpus places a control below row 4. Flame does not scroll or error on
   overflow — controls past row 4 spill into the next column and land on top of
@@ -200,6 +204,24 @@ Radii and pore size are in pixels at the working resolution and are not
 resolution independent — every `ResDependent` attribute is `"None"`. A setup
 built at HD needs them scaled for 4K. If this becomes a problem, that attribute
 is the lever, but changing it will invalidate existing saved setups.
+
+## Colour space
+
+The shader is deliberately colour-space agnostic: the band split is algebra and
+holds anywhere, and README's "Working in log" section carries the artist-facing
+guidance. The one genuinely space-sensitive piece of code is the bilateral range
+metric in passes 2-5 — `length(sample - centre) / max(luma(centre), 0.02)` — a
+scene-linear adaptation that makes edge protect bite harder in shadows than
+highlights on log material, which no existing control can compensate for.
+
+If real log use ever shows this hurting, the planned fix is a two-entry popup
+switching the range distance between relative (linear) and absolute (log/video),
+scoped to the bilateral weights only: declared in pass 2 alongside `edgeProtect`,
+duplicated into 3-5, and placed outside the full *Frequency split* column (the
+*Output* column has rows 3-4 free). A full Linear/Log/Video behaviour switch was
+considered and rejected — "log" is many different curves, most differences are
+absorbed by controls artists already set by eye, and a Matchbox cannot see
+Flame's colour management tags anyway.
 
 ## Git
 
